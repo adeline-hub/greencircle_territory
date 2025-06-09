@@ -24,10 +24,22 @@ app.layout = html.Div(style={
         'marginBottom': '30px'
     }),
 
+    html.Div([
+        html.Label("🔍 Filtrer par ville :", style={'fontWeight': 'bold'}),
+        dcc.Dropdown(
+            id='ville-dropdown',
+            options=[{'label': ville, 'value': ville} for ville in sorted(df['Ville'].unique())],
+            placeholder="Sélectionner une ville",
+            style={'width': '300px', 'marginBottom': '10px'}
+        ),
+        html.Button("🔄 Réinitialiser", id='reset-button', n_clicks=0, style={'marginLeft': '10px'})
+    ]),
+
     html.Div(style={
         'display': 'flex',
         'flexWrap': 'wrap',
-        'justifyContent': 'space-between'
+        'justifyContent': 'space-between',
+        'marginTop': '20px'
     }, children=[
 
         html.Div(style={
@@ -40,8 +52,9 @@ app.layout = html.Div(style={
             'boxShadow': '0 4px 8px rgba(0, 0, 0, 0.1)',
             'padding': '10px'
         }, children=[
+            html.H3("🗺️ Carte ESG", style={'textAlign': 'center', 'color': '#3B7A57'}),
             dcc.Graph(id='map', style={
-                'height': '65vh'
+                'height': '60vh'
             })
         ]),
 
@@ -87,10 +100,10 @@ app.layout = html.Div(style={
 )
 def update_map(selected_ville, reset_clicks):
     triggered_id = ctx.triggered_id
-    if triggered_id == 'reset-button':
+    if triggered_id == 'reset-button' or not selected_ville:
         filtered_df = df
     else:
-        filtered_df = df if not selected_ville else df[df['Ville'] == selected_ville]
+        filtered_df = df[df['Ville'] == selected_ville]
 
     fig = px.scatter_mapbox(
         filtered_df,
@@ -114,12 +127,18 @@ def update_map(selected_ville, reset_clicks):
 # Callback pour le graphique à barres
 @app.callback(
     Output('bar-chart', 'figure'),
-    Input('map', 'figure')  # Refresh bar chart when map updates
+    Input('ville-dropdown', 'value'),
+    Input('reset-button', 'n_clicks')
 )
-def update_bar_chart(_):
-    top10 = df.groupby('Ville')['Score_ESG'].mean().nlargest(10).reset_index()
+def update_bar_chart(selected_ville, reset_clicks):
+    triggered_id = ctx.triggered_id
+    if triggered_id == 'reset-button' or not selected_ville:
+        grouped_df = df.groupby('Ville')['Score_ESG'].mean().nlargest(10).reset_index()
+    else:
+        grouped_df = df[df['Ville'] == selected_ville].groupby('Ville')['Score_ESG'].mean().reset_index()
+
     fig = px.bar(
-        top10,
+        grouped_df,
         x='Score_ESG',
         y='Ville',
         orientation='h',
@@ -132,11 +151,18 @@ def update_bar_chart(_):
 # Callback pour le scatter plot
 @app.callback(
     Output('scatter-plot', 'figure'),
-    Input('map', 'figure')
+    Input('ville-dropdown', 'value'),
+    Input('reset-button', 'n_clicks')
 )
-def update_scatter(_):
+def update_scatter(selected_ville, reset_clicks):
+    triggered_id = ctx.triggered_id
+    if triggered_id == 'reset-button' or not selected_ville:
+        scatter_df = df
+    else:
+        scatter_df = df[df['Ville'] == selected_ville]
+
     fig = px.scatter(
-        df,
+        scatter_df,
         x='Vegetalisation_%',
         y='Recyclage_%',
         color='Ville',
