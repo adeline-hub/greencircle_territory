@@ -190,7 +190,7 @@ def update_map(selected_ville, reset_clicks):
         hover_name="Zone",
         custom_data=["Zone"],
         zoom=5,
-        height=600,
+        height=500,
         color_continuous_scale= custom_scale
     )
     fig.update_traces(marker_showscale=False)
