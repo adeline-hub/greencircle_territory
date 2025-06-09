@@ -11,31 +11,68 @@ server = app.server  # Pour Render
 
 app.title = "GreenCircle ESG Prototype"
 
-app.layout = html.Div(style={'fontFamily': 'Arial', 'backgroundColor': '#F4F9F4', 'padding': '20px'}, children=[
+app.layout = html.Div(style={
+    'fontFamily': 'Arial',
+    'backgroundColor': '#F4F9F4',
+    'padding': '20px'
+}, children=[
 
-    html.H1("🌿 GreenCircle - Plateforme ESG locale", style={'color': '#2F4F4F'}),
+    html.H1("🌿 GreenCircle - Plateforme ESG locale", style={
+        'color': '#2F4F4F',
+        'textAlign': 'center',
+        'fontSize': '36px',
+        'marginBottom': '30px'
+    }),
 
     html.Div([
-        # Carte interactive
-        dcc.Graph(id='map', style={'width': '60vw', 'height': '70vh', 'display': 'inline-block'}),
+        dcc.Graph(id='map', style={
+            'width': '100%',
+            'height': '60vh',
+            'borderRadius': '15px',
+            'boxShadow': '0 4px 8px rgba(0, 0, 0, 0.1)',
+            'marginBottom': '30px'
+        }),
 
-        # Détails ESG
-        html.Div(style={'width': '35vw', 'display': 'inline-block', 'verticalAlign': 'top', 'padding': '20px'}, children=[
-            html.H3("📍 Détails ESG de la zone sélectionnée", style={'color': '#3B7A57'}),
-            html.Div(id='esg-details', style={'fontSize': '16px'})
+        html.Div(style={
+            'backgroundColor': '#FFFFFF',
+            'borderRadius': '15px',
+            'padding': '20px',
+            'boxShadow': '0 4px 8px rgba(0, 0, 0, 0.1)',
+            'maxWidth': '600px',
+            'margin': '0 auto'
+        }, children=[
+            html.H3("📍 Détails ESG de la zone sélectionnée", style={
+                'color': '#3B7A57',
+                'textAlign': 'center'
+            }),
+            html.Div(id='esg-details', style={'fontSize': '16px', 'paddingTop': '10px'})
         ])
     ]),
 
     html.Br(),
-    html.Div([
-        html.Label("🔍 Filtrer par ville :", style={'fontWeight': 'bold'}),
+    html.Div(style={
+        'textAlign': 'center',
+        'marginTop': '30px'
+    }, children=[
+        html.Label("🔍 Filtrer par ville :", style={
+            'fontWeight': 'bold',
+            'fontSize': '18px'
+        }),
         dcc.Dropdown(
             id='ville-dropdown',
             options=[{'label': ville, 'value': ville} for ville in sorted(df['Ville'].unique())],
             placeholder="Sélectionner une ville",
-            style={'width': '300px', 'marginBottom': '10px'}
+            style={'width': '300px', 'margin': '10px auto'}
         ),
-        html.Button("🔄 Réinitialiser", id='reset-button', n_clicks=0, style={'marginLeft': '10px'})
+        html.Button("🔄 Réinitialiser", id='reset-button', n_clicks=0, style={
+            'marginLeft': '10px',
+            'backgroundColor': '#3B7A57',
+            'color': 'white',
+            'border': 'none',
+            'padding': '10px 20px',
+            'borderRadius': '5px',
+            'cursor': 'pointer'
+        })
     ])
 ])
 
@@ -63,7 +100,11 @@ def update_map(selected_ville, reset_clicks):
         height=600,
         color_continuous_scale="Greens"
     )
-    fig.update_layout(mapbox_style="carto-positron", margin={"r":0,"t":0,"l":0,"b":0})
+    fig.update_layout(
+        mapbox_style="carto-positron",
+        margin={"r":0,"t":0,"l":0,"b":0},
+        paper_bgcolor='#F4F9F4'
+    )
     return fig
 
 # Callback pour les détails
@@ -89,4 +130,5 @@ def update_dashboard(clickData):
 
 if __name__ == '__main__':
     app.run(debug=True)
+
 
