@@ -24,55 +24,58 @@ app.layout = html.Div(style={
         'marginBottom': '30px'
     }),
 
-    html.Div([
-        dcc.Graph(id='map', style={
-            'width': '100%',
-            'height': '60vh',
-            'borderRadius': '15px',
-            'boxShadow': '0 4px 8px rgba(0, 0, 0, 0.1)',
-            'marginBottom': '30px'
-        }),
+    html.Div(style={
+        'display': 'flex',
+        'flexWrap': 'wrap',
+        'justifyContent': 'space-between'
+    }, children=[
 
         html.Div(style={
+            'flex': '1',
+            'minWidth': '40%',
+            'height': '70vh',
+            'marginRight': '20px',
+            'backgroundColor': 'rgba(255, 255, 255, 0.8)',
+            'borderRadius': '15px',
+            'boxShadow': '0 4px 8px rgba(0, 0, 0, 0.1)',
+            'padding': '10px'
+        }, children=[
+            dcc.Graph(id='map', style={
+                'height': '65vh'
+            })
+        ]),
+
+        html.Div(style={
+            'flex': '1',
+            'minWidth': '40%',
+            'height': '70vh',
             'backgroundColor': '#FFFFFF',
             'borderRadius': '15px',
-            'padding': '20px',
             'boxShadow': '0 4px 8px rgba(0, 0, 0, 0.1)',
-            'maxWidth': '600px',
-            'margin': '0 auto'
+            'padding': '10px'
         }, children=[
-            html.H3("📍 Détails ESG de la zone sélectionnée", style={
-                'color': '#3B7A57',
-                'textAlign': 'center'
+            html.H3("🏙️ Top 10 villes par Score ESG", style={
+                'textAlign': 'center',
+                'color': '#3B7A57'
             }),
-            html.Div(id='esg-details', style={'fontSize': '16px', 'paddingTop': '10px'})
+            dcc.Graph(id='bar-chart', style={
+                'height': '60vh'
+            })
         ])
     ]),
 
-    html.Br(),
     html.Div(style={
-        'textAlign': 'center',
-        'marginTop': '30px'
+        'marginTop': '30px',
+        'backgroundColor': '#FFFFFF',
+        'borderRadius': '15px',
+        'padding': '20px',
+        'boxShadow': '0 4px 8px rgba(0, 0, 0, 0.1)'
     }, children=[
-        html.Label("🔍 Filtrer par ville :", style={
-            'fontWeight': 'bold',
-            'fontSize': '18px'
+        html.H3("🌱 Corrélation Végétalisation et Recyclage", style={
+            'textAlign': 'center',
+            'color': '#3B7A57'
         }),
-        dcc.Dropdown(
-            id='ville-dropdown',
-            options=[{'label': ville, 'value': ville} for ville in sorted(df['Ville'].unique())],
-            placeholder="Sélectionner une ville",
-            style={'width': '300px', 'margin': '10px auto'}
-        ),
-        html.Button("🔄 Réinitialiser", id='reset-button', n_clicks=0, style={
-            'marginLeft': '10px',
-            'backgroundColor': '#3B7A57',
-            'color': 'white',
-            'border': 'none',
-            'padding': '10px 20px',
-            'borderRadius': '5px',
-            'cursor': 'pointer'
-        })
+        dcc.Graph(id='scatter-plot')
     ])
 ])
 
@@ -103,30 +106,47 @@ def update_map(selected_ville, reset_clicks):
     fig.update_layout(
         mapbox_style="carto-positron",
         margin={"r":0,"t":0,"l":0,"b":0},
-        paper_bgcolor='#F4F9F4'
+        paper_bgcolor='rgba(0,0,0,0)',
+        plot_bgcolor='rgba(0,0,0,0)'
     )
     return fig
 
-# Callback pour les détails
+# Callback pour le graphique à barres
 @app.callback(
-    Output('esg-details', 'children'),
-    Input('map', 'clickData')
+    Output('bar-chart', 'figure'),
+    Input('map', 'figure')  # Refresh bar chart when map updates
 )
-def update_dashboard(clickData):
-    if clickData:
-        zone = clickData['points'][0]['customdata'][0]
-        row = df[df['Zone'] == zone].iloc[0]
-        return html.Ul([
-            html.Li(f"Ville : {row['Ville']}"),
-            html.Li(f"Score ESG : {row['Score_ESG']} / 100"),
-            html.Li(f"Qualité de l'air : {row['Qualite_Air']}"),
-            html.Li(f"Végétalisation : {row['Vegetalisation_%']}%"),
-            html.Li(f"Taux de recyclage : {row['Recyclage_%']}%"),
-            html.Li(f"Pollution sonore : {row['Pollution_Sonore_dB']} dB"),
-            html.Li(f"Accès à la nature : {row['Acces_Nature_m']} m")
-        ])
-    else:
-        return "Cliquez sur une zone de la carte."
+def update_bar_chart(_):
+    top10 = df.groupby('Ville')['Score_ESG'].mean().nlargest(10).reset_index()
+    fig = px.bar(
+        top10,
+        x='Score_ESG',
+        y='Ville',
+        orientation='h',
+        color='Score_ESG',
+        color_continuous_scale='Greens'
+    )
+    fig.update_layout(yaxis={'categoryorder':'total ascending'}, height=500, margin=dict(l=0, r=0, t=20, b=0))
+    return fig
+
+# Callback pour le scatter plot
+@app.callback(
+    Output('scatter-plot', 'figure'),
+    Input('map', 'figure')
+)
+def update_scatter(_):
+    fig = px.scatter(
+        df,
+        x='Vegetalisation_%',
+        y='Recyclage_%',
+        color='Ville',
+        hover_name='Zone',
+        size='Score_ESG',
+        title='Végétalisation vs Recyclage',
+        height=500
+    )
+    fig.update_layout(margin=dict(l=0, r=0, t=40, b=0))
+    return fig
 
 if __name__ == '__main__':
     app.run(debug=True)
